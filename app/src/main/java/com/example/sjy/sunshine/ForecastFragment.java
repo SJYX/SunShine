@@ -5,9 +5,11 @@ package com.example.sjy.sunshine;
  */
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -33,23 +35,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class ForecastFragment extends Fragment {
 
    private ArrayAdapter<String> mForecastAdapter;
     ListView listView;
-    String[] data = {
-            "Mon 6/23 - Sunny - 31/17",
-            "Tue 6/24 - Foggy - 21/8",
-            "Wed 6/25 - Cloudy - 22/17",
-            "Thurs 6/26 - Rainy - 18/11",
-            "Fri 6/27 - Foggy - 21/10",
-            "Sat 6/28 - TRAPPED  - 23/18",
-            "Sun 6/29 - Sunny - 20/7"
-    };
-    ArrayList<String> weather = new ArrayList<>(Arrays.asList(data));
-
     //空白构造器
     public ForecastFragment() {
 
@@ -74,20 +64,31 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
         if(id == R.id.action_refresh) {
             //Toast.makeText(getActivity(), "refresh", Toast.LENGTH_SHORT).show();
-            FetchWeatherTask weatherTask=new FetchWeatherTask();
-            weatherTask.execute("CN101190101");
+            updateWeather();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
+    private void updateWeather(){
+        FetchWeatherTask weatherTask=new FetchWeatherTask();
+        SharedPreferences prefs= PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location=prefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
+        weatherTask.execute(location);
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        updateWeather();
+    }
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        mForecastAdapter = new ArrayAdapter<>(
+        mForecastAdapter = new ArrayAdapter<String>(
                 getActivity(),
                 R.layout.list_item_forecast,
                 R.id.list_item_forecast_textview,
-                weather
+                new ArrayList<String>()
         );
         listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(mForecastAdapter);
@@ -248,7 +249,7 @@ public class ForecastFragment extends Fragment {
                 // Construct the URL for the OpenWeatherMap query
                 // Possible parameters are avaiable at OWM's forecast API page, at
                 // http://openweathermap.org/API#forecast
-                final String FORECAST_BASE_URL="https://api.heweather.com/x3/weather?cityid=CN101190101&key=c5c8626e8fc541d29437c6eed5e81dac";
+                final String FORECAST_BASE_URL="https://api.heweather.com/x3/weather?";
                 //final String QUERY_PARAM="q";
                 //final String FORMAT_PARAM="mode";
                 //final String UNITS_PARAM="units";
